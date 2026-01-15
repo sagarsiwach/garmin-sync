@@ -1,5 +1,26 @@
 """
-Scheduler - Runs Garmin sync on a schedule and optionally sends reports
+Scheduler - Runs Garmin sync on a schedule and saves daily health reports.
+
+This module provides a long-running scheduler that:
+1. Generates a health report immediately on startup (configurable)
+2. Generates a daily report at a specified time
+3. Saves reports as Markdown files to the data/ directory
+
+Environment Variables:
+    GARMIN_EMAIL: Your Garmin Connect email address
+    GARMIN_PASSWORD: Your Garmin Connect password
+    REPORT_TIME: Time to generate daily report in 24h format (default: "07:00")
+    RUN_ON_STARTUP: Whether to generate report on startup (default: "true")
+
+Usage:
+    # Run directly
+    python scheduler.py
+
+    # Or via uv
+    uv run scheduler.py
+
+    # Or via Docker
+    docker-compose up -d
 """
 
 import os
@@ -10,7 +31,15 @@ from main import get_client, get_today_stats, get_activities, get_steps_weekly, 
 
 
 def generate_report() -> str:
-    """Generate a daily health report"""
+    """
+    Generate a daily health report from Garmin data.
+
+    Fetches today's stats, recent activities, and weekly step summary.
+    Saves the report as a Markdown file in data/report_YYYY-MM-DD.md.
+
+    Returns:
+        str: The generated report text, or empty string on error
+    """
     print(f"\n[{datetime.now().isoformat()}] Generating report...")
 
     try:
@@ -56,7 +85,13 @@ def generate_report() -> str:
 
 
 def run_scheduler():
-    """Run the scheduler"""
+    """
+    Start the scheduler loop.
+
+    Schedules daily report generation at REPORT_TIME and optionally
+    runs an immediate report on startup. Runs indefinitely, checking
+    for pending tasks every 60 seconds.
+    """
     run_time = os.getenv("REPORT_TIME", "07:00")
 
     print(f"Garmin Sync Scheduler Started")

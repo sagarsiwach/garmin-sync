@@ -1,5 +1,24 @@
 """
 Garmin Sync - Fetch and analyze data from Garmin Connect
+
+This module provides functions to authenticate with Garmin Connect
+and retrieve health/fitness data including:
+- Daily stats (steps, calories, distance, heart rate)
+- Heart rate data
+- Sleep data
+- Activity history
+- Weekly step summaries
+
+Usage:
+    from main import get_client, get_today_stats, get_activities
+
+    client = get_client()
+    stats = get_today_stats(client)
+    activities = get_activities(client, limit=10)
+
+Environment Variables:
+    GARMIN_EMAIL: Your Garmin Connect email address
+    GARMIN_PASSWORD: Your Garmin Connect password
 """
 
 import os
@@ -11,7 +30,17 @@ load_dotenv()
 
 
 def get_client() -> Garmin:
-    """Initialize and login to Garmin Connect"""
+    """
+    Initialize and login to Garmin Connect.
+
+    Reads credentials from environment variables GARMIN_EMAIL and GARMIN_PASSWORD.
+
+    Returns:
+        Garmin: Authenticated Garmin Connect client
+
+    Raises:
+        ValueError: If credentials are not set in environment
+    """
     email = os.getenv("GARMIN_EMAIL")
     password = os.getenv("GARMIN_PASSWORD")
 
@@ -24,30 +53,74 @@ def get_client() -> Garmin:
 
 
 def get_today_stats(client: Garmin) -> dict:
-    """Get today's activity stats"""
+    """
+    Get today's activity statistics.
+
+    Args:
+        client: Authenticated Garmin client
+
+    Returns:
+        dict: Stats including totalSteps, totalKilocalories, totalDistanceMeters,
+              activeSeconds, restingHeartRate, etc.
+    """
     today = date.today().isoformat()
     return client.get_stats(today)
 
 
 def get_heart_rate(client: Garmin, day: date = None) -> dict:
-    """Get heart rate data for a specific day"""
+    """
+    Get heart rate data for a specific day.
+
+    Args:
+        client: Authenticated Garmin client
+        day: Date to fetch (defaults to today)
+
+    Returns:
+        dict: Heart rate data including resting HR, max HR, HR zones
+    """
     day = day or date.today()
     return client.get_heart_rates(day.isoformat())
 
 
 def get_sleep(client: Garmin, day: date = None) -> dict:
-    """Get sleep data for a specific day"""
+    """
+    Get sleep data for a specific day.
+
+    Args:
+        client: Authenticated Garmin client
+        day: Date to fetch (defaults to today)
+
+    Returns:
+        dict: Sleep data including duration, sleep levels, sleep score
+    """
     day = day or date.today()
     return client.get_sleep_data(day.isoformat())
 
 
 def get_activities(client: Garmin, limit: int = 10) -> list:
-    """Get recent activities"""
+    """
+    Get recent activities.
+
+    Args:
+        client: Authenticated Garmin client
+        limit: Maximum number of activities to return
+
+    Returns:
+        list: List of activity dicts with activityName, activityType, duration, etc.
+    """
     return client.get_activities(0, limit)
 
 
 def get_steps_weekly(client: Garmin) -> list:
-    """Get steps for the last 7 days"""
+    """
+    Get steps summary for the last 7 days.
+
+    Args:
+        client: Authenticated Garmin client
+
+    Returns:
+        list: List of dicts with date, steps, calories, distance_km for each day
+    """
     results = []
     for i in range(7):
         day = date.today() - timedelta(days=i)
