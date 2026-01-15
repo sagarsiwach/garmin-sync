@@ -1,0 +1,11 @@
+services:
+  garmin-sync:
+    build: .
+    container_name: garmin-sync
+    env_file:
+      - .env
+    restart: unless-stopped
+    # For scheduled runs, use cron mode
+    command: ["uv", "run", "python", "scheduler.py"]
+    volumes:
+      - ./data:/app/data

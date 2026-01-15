@@ -7,4 +7,5 @@ requires-python = ">=3.9"
 dependencies = [
     "garminconnect>=0.2.8",
     "python-dotenv>=1.2.1",
+    "schedule>=1.2.2",
 ]
