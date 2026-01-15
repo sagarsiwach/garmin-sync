@@ -1,0 +1,10 @@
+[project]
+name = "garmin-sync"
+version = "0.1.0"
+description = "Sync and analyze Garmin watch data"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "garminconnect>=0.2.8",
+    "python-dotenv>=1.2.1",
+]
