@@ -55,9 +55,9 @@ def get_steps_weekly(client: Garmin) -> list:
             stats = client.get_stats(day.isoformat())
             results.append({
                 "date": day.isoformat(),
-                "steps": stats.get("totalSteps", 0),
-                "calories": stats.get("totalKilocalories", 0),
-                "distance_km": round(stats.get("totalDistanceMeters", 0) / 1000, 2)
+                "steps": stats.get("totalSteps") or 0,
+                "calories": stats.get("totalKilocalories") or 0,
+                "distance_km": round((stats.get("totalDistanceMeters") or 0) / 1000, 2)
             })
         except Exception as e:
             print(f"Error fetching {day}: {e}")
@@ -72,11 +72,13 @@ if __name__ == "__main__":
     # Today's stats
     print("=== Today's Stats ===")
     stats = get_today_stats(client)
-    print(f"Steps: {stats.get('totalSteps', 'N/A')}")
-    print(f"Calories: {stats.get('totalKilocalories', 'N/A')}")
-    print(f"Distance: {stats.get('totalDistanceMeters', 0) / 1000:.2f} km")
-    print(f"Active Minutes: {stats.get('activeSeconds', 0) // 60}")
-    print(f"Resting HR: {stats.get('restingHeartRate', 'N/A')} bpm")
+    print(f"Steps: {stats.get('totalSteps') or 0:,}")
+    print(f"Calories: {stats.get('totalKilocalories') or 0:.0f}")
+    distance = (stats.get('totalDistanceMeters') or 0) / 1000
+    print(f"Distance: {distance:.2f} km")
+    active_mins = (stats.get('activeSeconds') or 0) // 60
+    print(f"Active Minutes: {active_mins}")
+    print(f"Resting HR: {stats.get('restingHeartRate') or 'N/A'} bpm")
 
     # Recent activities
     print("\n=== Recent Activities ===")
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     for act in activities:
         name = act.get("activityName", "Unknown")
         act_type = act.get("activityType", {}).get("typeKey", "unknown")
-        duration = act.get("duration", 0) / 60
+        duration = (act.get("duration") or 0) / 60
         print(f"- {name} ({act_type}) - {duration:.0f} min")
 
     # Weekly steps
