@@ -1,11 +1,19 @@
 services:
-  garmin-sync:
+  garmin-api:
     build: .
-    container_name: garmin-sync
+    container_name: garmin-api
     env_file:
       - .env
+    ports:
+      - "8000:8000"
     restart: unless-stopped
-    # For scheduled runs, use cron mode
-    command: ["uv", "run", "python", "scheduler.py"]
+    # API server mode (default)
+    command: ["uv", "run", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
     volumes:
       - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

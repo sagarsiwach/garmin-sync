@@ -1,56 +1,39 @@
-# Garmin Sync
+# Garmin Health API
 
-A comprehensive Python application to fetch **all** health and fitness data from Garmin Connect. Designed for self-hosting with Docker, runs on a schedule and saves detailed daily health reports in both Markdown and JSON formats.
+A FastAPI-based REST API for on-demand access to all Garmin Connect health and fitness data.
+
+**No scheduling, no cron jobs** - just call the endpoints when you need data.
 
 ## Features
 
-### Comprehensive Data Fetching
-- **Daily Stats**: Steps, calories (total/active/BMR), distance, floors, active minutes
-- **Heart Rate**: Resting, min, max HR + HR zones + all-day readings
-- **HRV**: Heart rate variability with weekly average and status
-- **Sleep**: Duration, sleep score, quality, deep/light/REM/awake breakdown
-- **Stress**: Average/max stress levels, rest duration, stress timeline
-- **Body Battery**: Energy levels throughout the day
-- **SpO2 & Respiration**: Blood oxygen and breathing rate
-- **Activities**: Full details including distance, pace, HR, elevation, cadence, training effect
-- **Activity Details**: Splits, HR zones during activity, weather conditions, gear used
-- **Training Status**: Readiness score, training load, recovery time
-- **Performance**: VO2 max, fitness age, race predictions (5K, 10K, half marathon, marathon)
-- **Body Composition**: Weight, BMI, body fat %, muscle mass
-- **Hydration**: Daily intake vs goal
+### Health Data Available
 
-### Output Formats
-- **Markdown reports** for human reading
-- **JSON reports** with complete data for further processing/analysis
+| Category | Data Points |
+|----------|-------------|
+| **Daily Stats** | Steps, calories (total/active/BMR), distance, floors, active minutes |
+| **Heart Rate** | Resting/min/max HR, HR zones, all-day readings count |
+| **HRV** | Heart rate variability, weekly average, status |
+| **Sleep** | Duration, score, quality, deep/light/REM/awake breakdown, SpO2 |
+| **Stress** | Average/max levels, time in each stress zone |
+| **Body Battery** | Start/end energy levels |
+| **SpO2 & Respiration** | Blood oxygen, breathing rate |
+| **Activities** | Full list with distance, pace, HR, training effect |
+| **Activity Details** | Per-activity splits, HR zones, weather, gear |
+| **Training** | Readiness score, status, load, recovery time |
+| **Performance** | VO2 max, fitness age, race predictions |
+| **Body Composition** | Weight, BMI, body fat %, muscle mass |
+| **Hydration** | Daily intake vs goal |
+| **Devices** | Connected Garmin devices |
 
-### Deployment Options
-- Run locally with `uv`
-- Schedule with Docker for automated daily reports
+### API Design
 
-## Requirements
+- **RESTful endpoints** with clear naming
+- **Pydantic models** for type-safe responses
+- **OpenAPI/Swagger docs** at `/docs`
+- **Date parameters** for historical data
+- **Singleton client** for efficient Garmin connection
 
-- Python 3.9+
-- [uv](https://github.com/astral-sh/uv) package manager
-- Docker & Docker Compose (for server deployment)
-- Garmin Connect account
-
-## Project Structure
-
-```
-garmin-sync/
-├── main.py           # GarminClient class with comprehensive data fetching
-├── scheduler.py      # Scheduled runner for daily reports
-├── Dockerfile        # Container image definition
-├── docker-compose.yml# Container orchestration
-├── pyproject.toml    # Python dependencies
-├── uv.lock           # Locked dependency versions
-├── .env.example      # Example environment variables
-└── data/             # Generated reports (gitignored)
-    ├── report_YYYY-MM-DD.md   # Human-readable report
-    └── report_YYYY-MM-DD.json # Full data export
-```
-
-## Quick Start (Local Development)
+## Quick Start
 
 ### 1. Clone the repository
 
@@ -71,252 +54,354 @@ uv sync
 cp .env.example .env
 ```
 
-Edit `.env` with your Garmin Connect credentials:
+Edit `.env`:
 
 ```env
 GARMIN_EMAIL=your@email.com
 GARMIN_PASSWORD=your_password
-REPORT_TIME=07:00
-RUN_ON_STARTUP=true
-INCLUDE_ACTIVITY_DETAILS=true
+API_HOST=0.0.0.0
+API_PORT=8000
 ```
 
-### 4. Run once (comprehensive report)
+### 4. Run the API server
 
 ```bash
-uv run python main.py
+uv run uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
-Example output:
+### 5. Access the API
 
-```
-============================================================
-GARMIN COMPREHENSIVE HEALTH REPORT
-============================================================
+- **API Root:** http://localhost:8000/
+- **Swagger Docs:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
 
-Fetching comprehensive Garmin data for 2025-01-15...
-  - Fetching activities...
-  - Fetching daily stats...
-  - Fetching heart rate data...
-  - Fetching sleep data...
-  - Fetching stress & body battery...
-  - Fetching training metrics...
-Done!
+## API Endpoints
 
-# Garmin Health Report - 2025-01-15
+### Health Reports
 
-## Daily Activity
-- **Steps:** 8,234 / 7,500 goal
-- **Distance:** 6.52 km
-- **Calories:** 2,150 total (450 active)
-- **Active Minutes:** 45
-- **Floors Climbed:** 12 / 10 goal
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | API info and endpoint directory |
+| `/health` | GET | Today's comprehensive health report |
+| `/health/{date}` | GET | Health report for specific date |
 
-## Heart Rate
-- **Resting HR:** 62 bpm
-- **Min HR:** 52 bpm
-- **Max HR:** 165 bpm
+### Sleep
 
-## Sleep
-- **Duration:** 7.2 hours
-- **Sleep Score:** 82
-- **Quality:** GOOD
-- **Deep:** 55 min | **Light:** 210 min | **REM:** 95 min | **Awake:** 15 min
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/sleep` | GET | Today's sleep data |
+| `/sleep/{date}` | GET | Sleep data for specific date |
 
-## Recent Activities
-- **Morning Run** (running) - 21 min, 3.23 km, pace: 6:35/km, HR: 157 bpm
-- **Evening Walk** (walking) - 22 min, 1.37 km, pace: 16:07/km, HR: 115 bpm
+### Heart Rate & HRV
 
-...
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/heart-rate` | GET | Today's heart rate and HRV |
+| `/heart-rate/{date}` | GET | Heart rate for specific date |
 
-Markdown report saved to: data/report_2025-01-15.md
-JSON report saved to: data/report_2025-01-15.json
-```
+### Stress & Energy
 
-### 5. Run scheduler (continuous)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/stress` | GET | Today's stress and body battery |
+| `/stress/{date}` | GET | Stress for specific date |
+
+### Activities
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/activities` | GET | Recent activities (use `?limit=N`, `?days=N`) |
+| `/activities/{id}` | GET | Detailed activity with splits, HR zones, weather |
+
+### Training & Performance
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/training` | GET | Training readiness, status, VO2 max, race predictions |
+
+### Body & Hydration
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/body` | GET | Body composition (use `?days=N` for history) |
+| `/hydration` | GET | Today's hydration data |
+| `/hydration/{date}` | GET | Hydration for specific date |
+
+### Summary & Devices
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/weekly` | GET | 7-day aggregated summary |
+| `/devices` | GET | Connected Garmin devices |
+
+### Utility
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/reconnect` | POST | Force re-authentication |
+
+## Usage Examples
+
+### Get Today's Health Report
 
 ```bash
-uv run python scheduler.py
+curl http://localhost:8000/health
 ```
 
-This will:
-- Generate a comprehensive report immediately (if `RUN_ON_STARTUP=true`)
-- Generate reports daily at the configured `REPORT_TIME`
-- Save reports to `data/` as both `.md` and `.json` files
+Response:
+```json
+{
+  "report_date": "2026-01-16",
+  "generated_at": "2026-01-16T09:30:00",
+  "daily_stats": {
+    "date": "2026-01-16",
+    "steps": 8234,
+    "goal_steps": 7500,
+    "calories_total": 2150,
+    "distance_km": 6.52
+  },
+  "sleep": {
+    "duration_hours": 7.2,
+    "sleep_score": 82,
+    "deep_sleep_minutes": 55
+  },
+  "heart_rate": {
+    "resting_hr": 62,
+    "min_hr": 52,
+    "max_hr": 145
+  },
+  ...
+}
+```
 
-## Docker Deployment (Server)
-
-### 1. Clone and configure
+### Get Sleep Data for Specific Date
 
 ```bash
-git clone https://github.com/sagarsiwach/garmin-sync.git
-cd garmin-sync
+curl http://localhost:8000/sleep/2026-01-15
+```
 
-# Create environment file
+### Get Last 5 Activities
+
+```bash
+curl "http://localhost:8000/activities?limit=5"
+```
+
+### Get Activity Details with Splits
+
+```bash
+curl http://localhost:8000/activities/12345678
+```
+
+Response includes:
+- Activity summary (distance, duration, pace, HR)
+- Lap/split data with per-lap metrics
+- Heart rate zones during activity
+- Weather conditions
+- Gear used
+
+### Get Weekly Summary
+
+```bash
+curl http://localhost:8000/weekly
+```
+
+Response:
+```json
+{
+  "period": "2026-01-10 to 2026-01-16",
+  "total_steps": 52340,
+  "avg_steps": 7477,
+  "total_distance_km": 41.23,
+  "avg_sleep_hours": 7.1,
+  "avg_resting_hr": 61,
+  "activity_count": 5,
+  "daily_breakdown": [...]
+}
+```
+
+## Docker Deployment
+
+### Build and Run
+
+```bash
+# Create .env file
 cat > .env << 'EOF'
 GARMIN_EMAIL=your@email.com
 GARMIN_PASSWORD=your_password
-REPORT_TIME=07:00
-RUN_ON_STARTUP=true
-INCLUDE_ACTIVITY_DETAILS=true
+API_HOST=0.0.0.0
+API_PORT=8000
 EOF
-```
 
-### 2. Build and run
-
-```bash
+# Build and start
 docker-compose up -d
-```
 
-### 3. Verify it's running
-
-```bash
-# Check container status
+# Check status
 docker-compose ps
 
 # View logs
 docker-compose logs -f
 
-# Check generated reports
-ls -la data/
+# Stop
+docker-compose down
 ```
 
-### 4. Management commands
+### Docker Commands
 
 ```bash
-# Stop the container
-docker-compose down
-
-# Restart
-docker-compose restart
-
 # Rebuild after code changes
 docker-compose up -d --build
 
-# Run a one-time fetch (without scheduler)
-docker-compose run --rm garmin-sync uv run python main.py
+# View real-time logs
+docker-compose logs -f garmin-api
+
+# Restart the service
+docker-compose restart
+
+# Check health
+curl http://localhost:8000/
+```
+
+## Project Structure
+
+```
+garmin-sync/
+├── api.py              # FastAPI application with all endpoints
+├── main.py             # GarminClient class with data fetching methods
+├── scheduler.py        # Legacy scheduled runner (optional)
+├── pyproject.toml      # Python dependencies
+├── uv.lock             # Locked dependency versions
+├── Dockerfile          # Container image
+├── docker-compose.yml  # Container orchestration
+├── .env.example        # Example environment variables
+├── .env                # Your credentials (gitignored)
+└── data/               # Generated reports (gitignored)
 ```
 
 ## Environment Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `GARMIN_EMAIL` | Your Garmin Connect email | - | Yes |
-| `GARMIN_PASSWORD` | Your Garmin Connect password | - | Yes |
-| `REPORT_TIME` | Time to generate daily report (24h format) | `07:00` | No |
-| `RUN_ON_STARTUP` | Generate report when container starts | `true` | No |
-| `INCLUDE_ACTIVITY_DETAILS` | Fetch detailed splits/HR zones for activities | `true` | No |
+| `GARMIN_EMAIL` | Garmin Connect email | - | Yes |
+| `GARMIN_PASSWORD` | Garmin Connect password | - | Yes |
+| `API_HOST` | Host to bind API server | `0.0.0.0` | No |
+| `API_PORT` | Port for API server | `8000` | No |
 
-## API Usage (main.py)
+## Response Models
 
+All responses use Pydantic models for type safety. Key models:
+
+### ComprehensiveReport
+Complete health report with all data categories.
+
+### SleepData
 ```python
-from main import GarminClient, format_report_markdown, export_report_json
-from datetime import date
-
-# Initialize client (logs in automatically)
-client = GarminClient()
-
-# Get comprehensive report with ALL data
-report = client.get_comprehensive_report()
-print(format_report_markdown(report))
-
-# Or fetch specific data
-stats = client.get_daily_stats()
-hr = client.get_heart_rate_data()
-sleep = client.get_sleep_data()
-stress = client.get_stress_data()
-battery = client.get_body_battery()
-activities = client.get_activities(limit=10)
-
-# Get detailed activity data (splits, HR zones, weather)
-activity_details = client.get_activity_details(activity_id=12345678)
-
-# Training metrics
-readiness = client.get_training_readiness()
-status = client.get_training_status()
-predictions = client.get_race_predictions()
-vo2max = client.get_max_metrics()
-
-# Body composition
-body = client.get_body_composition(days=30)
-hydration = client.get_hydration()
-
-# Weekly summary
-weekly = client.get_weekly_summary()
-
-# Export to JSON
-export_report_json(report, "my_report.json")
+{
+    "date": "2026-01-16",
+    "sleep_start": "2026-01-15T23:30:00",
+    "sleep_end": "2026-01-16T06:45:00",
+    "duration_hours": 7.25,
+    "duration_minutes": 435,
+    "deep_sleep_minutes": 55,
+    "light_sleep_minutes": 210,
+    "rem_sleep_minutes": 95,
+    "awake_minutes": 15,
+    "sleep_score": 82,
+    "sleep_quality": "GOOD",
+    "avg_spo2": 96.5,
+    "avg_respiration": 14.2
+}
 ```
 
-## Available Data Methods
+### ActivityDetail
+```python
+{
+    "activity_id": 12345678,
+    "summary": {
+        "name": "Morning Run",
+        "type": "running",
+        "duration_mins": 32.5,
+        "distance_km": 5.23,
+        "avg_pace_min_km": "6:13",
+        "avg_hr": 155,
+        "training_effect_aerobic": 3.2
+    },
+    "splits": [
+        {"lap_number": 1, "distance_m": 1000, "duration_s": 372, "avg_hr": 148},
+        {"lap_number": 2, "distance_m": 1000, "duration_s": 365, "avg_hr": 155}
+    ],
+    "hr_zones": [...],
+    "weather": {"temperature": 24, "condition": "PARTLY_CLOUDY"},
+    "gear": [{"name": "Nike Pegasus 40", "uuid": "..."}]
+}
+```
 
-| Method | Description |
-|--------|-------------|
-| `get_daily_stats(day)` | Steps, calories, distance, floors, active minutes |
-| `get_heart_rate_data(day)` | Resting/min/max HR, HR zones, all readings |
-| `get_hrv_data(day)` | Heart rate variability |
-| `get_sleep_data(day)` | Sleep duration, score, stages breakdown |
-| `get_stress_data(day)` | Stress levels throughout the day |
-| `get_body_battery(day)` | Energy levels |
-| `get_respiration_data(day)` | Breathing rate |
-| `get_spo2_data(day)` | Blood oxygen levels |
-| `get_body_composition(days)` | Weight, BMI, body fat, muscle mass |
-| `get_hydration(day)` | Water intake |
-| `get_activities(limit)` | Recent activities list |
-| `get_activity_details(id)` | Detailed activity with splits, HR zones, weather |
-| `get_training_readiness(day)` | Training readiness score |
-| `get_training_status(day)` | Training load and status |
-| `get_endurance_score(day)` | Endurance score |
-| `get_race_predictions()` | Predicted race times |
-| `get_max_metrics(day)` | VO2 max, fitness age |
-| `get_personal_records()` | Personal bests |
-| `get_devices()` | Connected Garmin devices |
-| `get_comprehensive_report(day)` | All data in one call |
-| `get_weekly_summary()` | 7-day summary |
+### WeeklySummary
+Aggregated data with daily breakdown for the past 7 days.
 
-## Data Writing (Limited)
+## Error Handling
 
-The Garmin API supports limited write operations:
+The API returns appropriate HTTP status codes:
 
-| Data Type | Can Write? | Notes |
-|-----------|------------|-------|
-| Weight | Yes | Use `client.client.add_weigh_in()` |
-| Activities | Yes | Upload FIT/GPX files |
-| Hydration | No | Read-only |
-| Diet/Nutrition | No | Not exposed by API |
+| Code | Meaning |
+|------|---------|
+| 200 | Success |
+| 400 | Bad request (e.g., invalid date format) |
+| 404 | Resource not found (e.g., activity ID) |
+| 500 | Server error |
+| 503 | Garmin connection failed |
+
+Error response format:
+```json
+{
+    "detail": "Error message here"
+}
+```
 
 ## Troubleshooting
 
-### "Login failed" or authentication errors
-
-- Verify your email and password in `.env`
-- Garmin may require MFA - try logging in via browser first
-- The library may break if Garmin changes their auth flow - check [garminconnect issues](https://github.com/cyberjunky/python-garminconnect/issues)
-
-### Container keeps restarting
+### Authentication Errors
 
 ```bash
-# Check logs for errors
-docker-compose logs garmin-sync
+# Force reconnect
+curl -X POST http://localhost:8000/reconnect
 ```
 
-### No data for today
+### "Login failed"
 
-- Garmin syncs data from your watch periodically
-- Today's data may be incomplete until your watch syncs
-- Try syncing your watch via the Garmin Connect app
+- Verify email/password in `.env`
+- Try logging into Garmin Connect web first
+- Check if MFA is required
 
-### Rate limiting
+### Rate Limiting
 
-- The app limits detailed activity fetches to 5 per run
-- If you see errors, Garmin may be rate-limiting requests
-- Set `INCLUDE_ACTIVITY_DETAILS=false` for faster, simpler reports
+The API caches the Garmin client connection. If you hit rate limits:
+- Wait a few minutes
+- Use `/reconnect` to reset the session
+
+### No Data for Today
+
+- Garmin data syncs from your watch periodically
+- Today's data may be incomplete until watch syncs
+- Sync via Garmin Connect app first
 
 ## Security Notes
 
-- Never commit `.env` to git (it's in `.gitignore`)
+- Never commit `.env` to git
 - Use strong, unique password for Garmin
-- Consider using Docker secrets for production deployments
+- Consider running behind a reverse proxy with auth for production
+- The API exposes personal health data - secure accordingly
+
+## Development
+
+### Run with auto-reload
+
+```bash
+uv run uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Access Swagger UI
+
+Open http://localhost:8000/docs for interactive API documentation.
 
 ## License
 
@@ -325,3 +410,4 @@ MIT
 ## Credits
 
 - [python-garminconnect](https://github.com/cyberjunky/python-garminconnect) - Unofficial Garmin Connect API client
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework

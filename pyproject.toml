@@ -1,11 +1,17 @@
 [project]
 name = "garmin-sync"
-version = "0.1.0"
-description = "Sync and analyze Garmin watch data"
+version = "1.0.0"
+description = "On-demand Garmin Connect health data API"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "garminconnect>=0.2.8",
     "python-dotenv>=1.2.1",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
     "schedule>=1.2.2",
 ]
+
+[project.scripts]
+garmin-api = "api:main"
