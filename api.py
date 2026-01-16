@@ -42,7 +42,7 @@ Environment Variables:
 
 import os
 from datetime import date, datetime, timedelta
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Union
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query, Path
@@ -106,8 +106,8 @@ class HRVData(BaseModel):
 class SleepData(BaseModel):
     """Sleep analysis data."""
     date: str
-    sleep_start: Optional[str] = None
-    sleep_end: Optional[str] = None
+    sleep_start: Optional[Union[str, int]] = None
+    sleep_end: Optional[Union[str, int]] = None
     duration_hours: float = 0
     duration_minutes: int = 0
     deep_sleep_minutes: int = 0
