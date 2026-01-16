@@ -79,8 +79,8 @@ class DailyStats(BaseModel):
     distance_km: float = 0
     active_minutes: int = 0
     intensity_minutes: int = 0
-    floors_climbed: int = 0
-    floors_goal: int = 0
+    floors_climbed: float = 0
+    floors_goal: float = 0
 
 
 class HeartRateData(BaseModel):
